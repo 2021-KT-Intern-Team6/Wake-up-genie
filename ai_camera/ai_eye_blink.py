@@ -10,7 +10,7 @@
 # 5. 알람을 울림
 
 #========= Import library ===========#
-
+import kws
 import cv2, dlib
 from tensorflow import keras
 import numpy as np
@@ -22,6 +22,7 @@ from threading import Thread
 import project_sensortoge as ps
 import time
 #===================================#
+
 
 
 
@@ -99,126 +100,133 @@ def main():
   cap = cv2.VideoCapture(0) #카메라 실행
   prev_time = time.time()
   while cap.isOpened(): #카메라가 실행되었다면
-    ret, img_ori = cap.read() #비디오의 한 프레임 씩 읽어오기 제대로 프레임을 읽으면 ret값이 True, 실패하면 False, fram = 읽은 프레임
-    SENSOR_FRAME += 1
-    if not ret: #제대로 프레임을 읽어오지 못했다면 while문 탈출해서 카메라 실행 중지
-      break
-
-    img_ori = cv2.resize(img_ori, dsize=(0, 0), fx=0.5, fy=0.5) #x축과 y축 방향으로 스케일 비율 조정
-    # img_ori: 입력 영상 / dsize=(0,0) => fx와 fy값을 이용하여 설정하겠다는 의미
-
-    img = img_ori.copy() #이미지 복사
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) #gray scailing한 img를 gray에 저장
-
-    faces = detector(gray) #gray scail 이미지에서 얼굴을 인식
-    
-    prev_time, fps = check_frm(prev_time)
-    print('frame count: ' + str(fps))
-    
-    # 얼굴 감지에 대한 루프
-    for face in faces:
-
-      shapes = predictor(gray, face) # 얼굴 영역의 얼굴 랜드마크를 결정한 다음
-      shapes = face_utils.shape_to_np(shapes) # 얼굴 랜드마크(x, y) 좌표를 NumPy로 변환
-
-      eye_img_l, eye_rect_l = crop_eye(gray, eye_points=shapes[36:42]) #왼쪽눈부분만 crop => 왼쪽눈 이미지와 사각형 좌표 반환
-      eye_img_r, eye_rect_r = crop_eye(gray, eye_points=shapes[42:48]) #오른쪽 눈부분만 crop => 오른쪽눈 이미지와 사각형 좌표 반환
-
-      #눈 이미지크기 재설정
-      eye_img_l = cv2.resize(eye_img_l, dsize=IMG_SIZE)
-      eye_img_r = cv2.resize(eye_img_r, dsize=IMG_SIZE)
-      eye_img_r = cv2.flip(eye_img_r, flipCode=1) #오른쪽 눈은 좌우반전
-
-      #눈의 이미지를 1차원 배열로 reshape하여 0-1사이의 숫자로 바꿔줌
-      eye_input_l = eye_img_l.copy().reshape((1, IMG_SIZE[1], IMG_SIZE[0], 1)).astype(np.float32) / 255.
-      eye_input_r = eye_img_r.copy().reshape((1, IMG_SIZE[1], IMG_SIZE[0], 1)).astype(np.float32) / 255.
-
-      #====================데이터 전처리 과정 끝! 모델이 결과를 예측===================#
-
-      #불러온 CNN모델로 결과예측
-      pred_l = model.predict(eye_input_l)
-      pred_r = model.predict(eye_input_r)
-
-      #===============================예측된 결과로 졸음을 판별하는 과정=======================================#
-
-      # visualize
-      state_l = '%.1f' if pred_l > 0.1 else '%.1f'
-      state_r = '%.1f' if pred_r > 0.1 else '%.1f'
-
-      state_l = state_l % pred_l
-      state_r = state_r % pred_r
-
-      #eye_open_close = 학습된 결과로 두 눈을 감았는지 떴는지를 알려주는 수치
-      eye_open_close = (float(state_l) + float(state_r)) / 2.0
-      print(COUNTER)
-
-      #눈을 감으면
-      if eye_open_close < EYE_AR_THRESH:
-        if not TIMER_FLAG: # 이전에 타이머가 시작이 안되었으면 (=이전에 눈을 뜨고 있었으면)
-          start_closing = timeit.default_timer()  # 눈을 감기 시작한 시간 check
-          TIMER_FLAG = True # TIMER_FLAG를 True로 설정해서 이전에 눈을 감았다는 것을 알려줌
-        COUNTER += 1 #눈을 감은 frame수를 의미하는 COUNTER를 +1
-
-        if COUNTER >= EYE_AR_CONSEC_FRAMES: # 일정 프레임이상 눈을 감은게 인지되면 => 졸음이라고 인지하면
-          mid_closing = timeit.default_timer()  # 인지하는 시점에서 시간을 한번 더 저장한다.
-          closing_time = round((mid_closing - start_closing), 3)  # 눈을 감고 있던 시간을 계산
-          if closing_time >= RUNNING_TIME: #running_time => 알람이 꺼지지 않게 해주는 변수(알람의 단계를 설정하는 변수...?)
-            if RUNNING_TIME == 0: #처음 졸음이라고 인지했을때
-              CUR_TERM = timeit.default_timer()
-              OPENED_EYES_TIME = round((CUR_TERM - PREV_TERM), 3)
-              PREV_TERM = CUR_TERM
-              RUNNING_TIME = 1.75 #..?
-
-            RUNNING_TIME += 2 # 뭔가 알람의 단계를 설정하는 것과 관계있는 변수
-            ALARM_FLAG = True # 알람이 트리거된 적이 있다고 알려준다.
-            ALARM_COUNT += 1 # 알람이 한번 실행되었음을 알려준다.
-
-            # ===============================knn모델이 졸음의 단계를 예측=======================================#
-
-            #눈을 뜨고 있던 시간(knn모델의 y축)을 knn모델에서 사용하기 위해 test_data에 append
-            test_data.append([OPENED_EYES_TIME, round(closing_time * 10, 3)])
-            #눈을 뜨고 있던 시간(y) 눈을 감고 있던 시간(x)을 knn모델로 보낸다.
-            result = km.run([OPENED_EYES_TIME, closing_time * 10], power, nomal, short)
-            result_data.append(result) #예측결과를 result_data에 넣는다.
-
-            # ===============================예측된 졸음의 단계에 맞는 알람을 울림=======================================#
-
-            if not RINGING_FLAG:
-              t = Thread(target=alarm.select_alarm, args=(result,))
-              t.deamon = True
-              t.start()
-              RINGING_FLAG = True
-
-            #===============================================================================================#
-
-      else: #눈을떴을때 눈을 감았을때 축적된 데이터를 초기화
-        COUNTER = 0
-        TIMER_FLAG = False
-        RUNNING_TIME = 0
-        ALARM_FLAG = False
-
-        if SENSOR_FRAME >= 60 and RINGING_FLAG == False:
-          th = Thread(target=ps.main)
-          th.deamon = True
-          th.start()
-          SENSOR_FRAME = 0
         
-        
-      #=============================실시간으로 txt로 보여주는 부분================================#
-      RINGING_FLAG = False
-      # 왼쪽눈 오른쪽 눈에 상자 띄워서 실시간으로 눈 종횡비 보여주는 부분
-      cv2.rectangle(img, pt1=tuple(eye_rect_l[0:2]), pt2=tuple(eye_rect_l[2:4]), color=(255,255,255), thickness=1)
-      cv2.rectangle(img, pt1=tuple(eye_rect_r[0:2]), pt2=tuple(eye_rect_r[2:4]), color=(255,255,255), thickness=1)
-      cv2.putText(img, state_l, tuple(eye_rect_l[0:2]), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 2)
-      cv2.putText(img, state_r, tuple(eye_rect_r[0:2]), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 2)
-    img = cv2.resize(img, dsize=(0, 0), fx=2.0, fy=2.0)
-    cv2.imshow('result', img)
+    if kws.main() == True:    
+      ret, img_ori = cap.read() #비디오의 한 프레임 씩 읽어오기 제대로 프레임을 읽으면 ret값이 True, 실패하면 False, fram = 읽은 프레임
+      SENSOR_FRAME += 1
+      if not ret: #제대로 프레임을 읽어오지 못했다면 while문 탈출해서 카메라 실행 중지
+        break
 
-    #========================================================================================#
+      img_ori = cv2.resize(img_ori, dsize=(0, 0), fx=0.5, fy=0.5) #x축과 y축 방향으로 스케일 비율 조정
+      # img_ori: 입력 영상 / dsize=(0,0) => fx와 fy값을 이용하여 설정하겠다는 의미
 
-    # 카메라 종료
+      img = img_ori.copy() #이미지 복사
+      gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) #gray scailing한 img를 gray에 저장
+
+      faces = detector(gray) #gray scail 이미지에서 얼굴을 인식
+      
+      prev_time, fps = check_frm(prev_time)
+      print('frame count: ' + str(fps))
+      
+      # 얼굴 감지에 대한 루프
+      for face in faces:
+
+        shapes = predictor(gray, face) # 얼굴 영역의 얼굴 랜드마크를 결정한 다음
+        shapes = face_utils.shape_to_np(shapes) # 얼굴 랜드마크(x, y) 좌표를 NumPy로 변환
+
+        eye_img_l, eye_rect_l = crop_eye(gray, eye_points=shapes[36:42]) #왼쪽눈부분만 crop => 왼쪽눈 이미지와 사각형 좌표 반환
+        eye_img_r, eye_rect_r = crop_eye(gray, eye_points=shapes[42:48]) #오른쪽 눈부분만 crop => 오른쪽눈 이미지와 사각형 좌표 반환
+
+        #눈 이미지크기 재설정
+        eye_img_l = cv2.resize(eye_img_l, dsize=IMG_SIZE)
+        eye_img_r = cv2.resize(eye_img_r, dsize=IMG_SIZE)
+        eye_img_r = cv2.flip(eye_img_r, flipCode=1) #오른쪽 눈은 좌우반전
+
+        #눈의 이미지를 1차원 배열로 reshape하여 0-1사이의 숫자로 바꿔줌
+        eye_input_l = eye_img_l.copy().reshape((1, IMG_SIZE[1], IMG_SIZE[0], 1)).astype(np.float32) / 255.
+        eye_input_r = eye_img_r.copy().reshape((1, IMG_SIZE[1], IMG_SIZE[0], 1)).astype(np.float32) / 255.
+
+        #====================데이터 전처리 과정 끝! 모델이 결과를 예측===================#
+
+        #불러온 CNN모델로 결과예측
+        pred_l = model.predict(eye_input_l)
+        pred_r = model.predict(eye_input_r)
+
+        #===============================예측된 결과로 졸음을 판별하는 과정=======================================#
+
+        # visualize
+        state_l = '%.1f' if pred_l > 0.1 else '%.1f'
+        state_r = '%.1f' if pred_r > 0.1 else '%.1f'
+
+        state_l = state_l % pred_l
+        state_r = state_r % pred_r
+
+        #eye_open_close = 학습된 결과로 두 눈을 감았는지 떴는지를 알려주는 수치
+        eye_open_close = (float(state_l) + float(state_r)) / 2.0
+        print(COUNTER)
+
+        #눈을 감으면
+        if eye_open_close < EYE_AR_THRESH:
+          if not TIMER_FLAG: # 이전에 타이머가 시작이 안되었으면 (=이전에 눈을 뜨고 있었으면)
+            start_closing = timeit.default_timer()  # 눈을 감기 시작한 시간 check
+            TIMER_FLAG = True # TIMER_FLAG를 True로 설정해서 이전에 눈을 감았다는 것을 알려줌
+          COUNTER += 1 #눈을 감은 frame수를 의미하는 COUNTER를 +1
+
+          if COUNTER >= EYE_AR_CONSEC_FRAMES: # 일정 프레임이상 눈을 감은게 인지되면 => 졸음이라고 인지하면
+            mid_closing = timeit.default_timer()  # 인지하는 시점에서 시간을 한번 더 저장한다.
+            closing_time = round((mid_closing - start_closing), 3)  # 눈을 감고 있던 시간을 계산
+            if closing_time >= RUNNING_TIME: #running_time => 알람이 꺼지지 않게 해주는 변수(알람의 단계를 설정하는 변수...?)
+              if RUNNING_TIME == 0: #처음 졸음이라고 인지했을때
+                CUR_TERM = timeit.default_timer()
+                OPENED_EYES_TIME = round((CUR_TERM - PREV_TERM), 3)
+                PREV_TERM = CUR_TERM
+                RUNNING_TIME = 1.75 #..?
+
+              RUNNING_TIME += 2 # 뭔가 알람의 단계를 설정하는 것과 관계있는 변수
+              ALARM_FLAG = True # 알람이 트리거된 적이 있다고 알려준다.
+              ALARM_COUNT += 1 # 알람이 한번 실행되었음을 알려준다.
+
+              # ===============================knn모델이 졸음의 단계를 예측=======================================#
+
+              #눈을 뜨고 있던 시간(knn모델의 y축)을 knn모델에서 사용하기 위해 test_data에 append
+              test_data.append([OPENED_EYES_TIME, round(closing_time * 10, 3)])
+              #눈을 뜨고 있던 시간(y) 눈을 감고 있던 시간(x)을 knn모델로 보낸다.
+              result = km.run([OPENED_EYES_TIME, closing_time * 10], power, nomal, short)
+              result_data.append(result) #예측결과를 result_data에 넣는다.
+
+              # ===============================예측된 졸음의 단계에 맞는 알람을 울림=======================================#
+
+              if not RINGING_FLAG:
+                t = Thread(target=alarm.select_alarm, args=(result,))
+                t.deamon = True
+                t.start()
+                RINGING_FLAG = True
+
+              #===============================================================================================#
+
+        else: #눈을떴을때 눈을 감았을때 축적된 데이터를 초기화
+          COUNTER = 0
+          TIMER_FLAG = False
+          RUNNING_TIME = 0
+          ALARM_FLAG = False
+
+          if SENSOR_FRAME >= 60 and RINGING_FLAG == False:
+            th = Thread(target=ps.main)
+            th.deamon = True
+            th.start()
+            SENSOR_FRAME = 0
+          
+          
+        #=============================실시간으로 txt로 보여주는 부분================================#
+        RINGING_FLAG = False
+        # 왼쪽눈 오른쪽 눈에 상자 띄워서 실시간으로 눈 종횡비 보여주는 부분
+        cv2.rectangle(img, pt1=tuple(eye_rect_l[0:2]), pt2=tuple(eye_rect_l[2:4]), color=(255,255,255), thickness=1)
+        cv2.rectangle(img, pt1=tuple(eye_rect_r[0:2]), pt2=tuple(eye_rect_r[2:4]), color=(255,255,255), thickness=1)
+        cv2.putText(img, state_l, tuple(eye_rect_l[0:2]), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 2)
+        cv2.putText(img, state_r, tuple(eye_rect_r[0:2]), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 2)
+      img = cv2.resize(img, dsize=(0, 0), fx=2.0, fy=2.0)
+      cv2.imshow('result', img)
+
+      #========================================================================================#
+
+      # 카메라 종료
+      
+    else:
+      cv2.destroyAllWindows()
+      
     if cv2.waitKey(1) == ord('q'):
-      break
+        break
+  
 
 if __name__ == '__main__':
 	main()
