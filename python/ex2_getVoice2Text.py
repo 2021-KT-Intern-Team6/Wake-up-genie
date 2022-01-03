@@ -14,7 +14,7 @@ import audioop
 import os
 from ctypes import *
 
-import ex4_getText2VoiceStream as tts
+import tts
 
 
 HOST = 'gate.gigagenie.ai'
