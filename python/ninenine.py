@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Example 6: STT + Dialog - queryByVoice"""
+# file_name: ninenine.py
+# file_function:
+# 1. 구구단
+
 
 from __future__ import print_function
 
@@ -48,7 +51,9 @@ def generate_request():
 			message.audioContent = content
 			yield message
 			rms = audioop.rms(content,2)
-			
+
+
+#============================= 숫자 -> 한글 숫자 ================================#			
 def readNumber(n):
 	units = [''] + list('십백천')
 	nums = '일이삼사오육칠팔구'
@@ -61,16 +66,20 @@ def readNumber(n):
 		i +=1
 	return ''.join(result[::-1])
 	
+#============================= 구구단 ================================#	
 def ninenine():
-	a=random.randrange(1,10)
-	b=random.randrange(1,10)
+	# random을 통한 곱셈값 
+	a=random.randrange(2,10)
+	b=random.randrange(2,10)
 	
+	# 발화
 	test = readNumber(a) + ' 곱하기 ' + readNumber(b) + '는?'
 	tts.getText2VoiceStream(test, "result_mesg.wav")
 	MS.play_file("result_mesg.wav")
 	
 	time.sleep(0.5)
 	
+	# 답 듣기
 	print ("듣고 있는 중......\n")
 	request = generate_request()
 	resultText = ''
@@ -78,31 +87,31 @@ def ninenine():
 	if response.resultCd == 200:
 		resultText = response.uword
 		
-		if resultText == '':
-			print('질의한 내용이 없습니다.\n\n\n')
+		if resultText == '':#답한 내용이 없음
+			print('답한 내용이 없습니다.\n\n\n')
 		else:
 			print("답한 내용: %s" % (resultText))
 
+			#답이 맞는경우
 			if resultText.find(str(a*b)) == 0 or resultText.find(readNumber(a*b)) == 0:
 				print("정답입니다")
 				tts.getText2VoiceStream('정답입니다', "result_mesg.wav")
 				MS.play_file("result_mesg.wav")
-
+			
+			#답이 틀린경우
 			else:
 				print("오답입니다. 정답은", readNumber(a*b),"입니다")
 				tts.getText2VoiceStream('오답입니다', "result_mesg.wav")
 				MS.play_file("result_mesg.wav")
 				ninenine()
 
-
+	#답한 내용이 없음
 	else:
 		print("\n\nresultCd: %d\n" % (response.resultCd))
 		print("정상적인 음성인식이 되지 않았습니다.")
 
 
 def queryByVoice():
-	
-	
 	
 	print ("듣고 있는 중......\n")
 	request = generate_request()
@@ -112,21 +121,12 @@ def queryByVoice():
 		Text = response.uword
 		
 	if Text.find('졸려') == 0 or Text.find('도와줘') == 0:
-		ninenine()
+		ninenine() #구구단
 		
 
 def main():
 	queryByVoice(8,6)
-	#print(result)
-	#tts.getText2VoiceStream(result, "result_mesg.wav")
-	#MS.play_file("result_mesg.wav")
-	#print(tts_result)
 
-	'''
-	time.sleep(5)
-	tts_result = tts.getText2VoiceStream(result, "result_mesg.wav")
-	time.sleep(0.5)
-	'''
 if __name__ == '__main__':
 	while 1:
 		main()

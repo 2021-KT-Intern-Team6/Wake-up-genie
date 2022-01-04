@@ -1,3 +1,11 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# file_name: project_sensortoge.py
+# file_function:
+# 1. 온습도 결과에 따른 음성 출력
+
+
 from __future__ import print_function
 
 
@@ -28,6 +36,7 @@ c_error_handler = ERROR_HANDLER_FUNC(py_error_handler)
 asound = cdll.LoadLibrary('libasound.so')
 asound.snd_lib_error_set_handler(c_error_handler)
 
+#=============================TTS================================#
 def getText2VoiceStream(inText,inFileName):
 
 	channel = grpc.secure_channel('{}:{}'.format(HOST, PORT), UA.getCredentials())
@@ -46,7 +55,7 @@ def getText2VoiceStream(inText,inFileName):
 			writeFile.write(response.audioContent)
 	writeFile.close()
 	return response.resOptions.resultCd
-		
+#======================================================================#		
 		
 def main():
 	
@@ -56,24 +65,22 @@ def main():
 	
 	if seri.in_waiting !=0 :   # conect with adu
 		#time.sleep(2)
-		#content = seri.readline() # save value  
-		#x=float(content[:-2].decode())
-		x = 80.0
+		content = seri.readline() # 가스데이터 read  
+		x=float(content[:-2].decode())
 		print(x)
 		print(temperature)
+	
+		#============================= 온도, 가스데이터에 따른 알림 출력 ================================#
 		if x < 85.0 and temperature <5.0: 
 
 			MS.play_file("test5.wav")
-			#time.sleep(10)
 			
 		if x < 85.0 and temperature >= 5.0:
 			MS.play_file("test6.wav")
-			#time.sleep(10)
 						
 		if x >= 85.0 and temperature >= 5.0:
 			MS.play_file("test7.wav")
-			#time.sleep(10)
-
+		#===============================================================================================			
 			
 		
 

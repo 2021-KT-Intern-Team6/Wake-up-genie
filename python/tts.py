@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Example 4: TTS - getText2VoiceStream"""
+# file_name: tts.py
+# file_function:
+# 1. 텍스트 -> 음성
 
 from __future__ import print_function
 
@@ -47,10 +49,6 @@ def getText2VoiceStream(inText,inFileName):
 def main():
 	output_file = "testtts.wav"
 	getText2VoiceStream("구구단을 실행하겠습니다.", output_file)
-	MS.play_file(output_file)
-	print( output_file + "이 생성되었으니 파일을 확인바랍니다. \n\n\n")
-	
-	getText2VoiceStream("가나다라마바사", output_file)
 	MS.play_file(output_file)
 	print( output_file + "이 생성되었으니 파일을 확인바랍니다. \n\n\n")
 	

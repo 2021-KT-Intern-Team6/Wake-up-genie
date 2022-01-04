@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Example 1: GiGA Genie Keyword Spotting"""
+# file_name: kws.py
+# file_function:
+# 1. 버튼 이벤트
+# 2. Ai Makers 호출
+# 3. Butten LED
 
 from __future__ import print_function
 
@@ -20,6 +24,7 @@ GPIO.setup(29, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.setup(31, GPIO.OUT)
 btn_status = False
 
+#=============================Button event================================#
 def callback(channel):  
 	print("falling edge detected from pin {}".format(channel))
 	global btn_status
@@ -39,7 +44,7 @@ c_error_handler = ERROR_HANDLER_FUNC(py_error_handler)
 asound = cdll.LoadLibrary('libasound.so')
 asound.snd_lib_error_set_handler(c_error_handler)
 
-
+#=============================Ai Makers 호출 대기================================#
 def detect():
 	with MS.MicrophoneStream(RATE, CHUNK) as stream:
 		audio_generator = stream.generator()
@@ -55,6 +60,7 @@ def detect():
 				print(9)
 				return 200
 
+#=============================Button Push 대기================================#
 def btn_detect():
 	global btn_status
 	with MS.MicrophoneStream(RATE, CHUNK) as stream:
@@ -101,6 +107,7 @@ def btn_test(key_word = '기가지니'):
 	ktkws.stop()
 	return rc
 
+#=============================Button 상태 리턴================================#
 def main():
 	#test()
 	GPIO.output(31, btn_status)

@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""
-Date:2019.02.18
-Example 8: 음성인식 TTS 대화 결합 예제
-"""
+# file_name: call_genie.py
+# file_function:
+# 1. Ai Makers 호출
 
 from __future__ import print_function
 
@@ -12,7 +11,7 @@ import kws
 import ninenine as nn
 
 def main():
-	#Example8 KWS+STT+DSS
+	# KWS+STT+구구단
 
 	KWSID = ['지니야', '기가지니', '친구야', '자기야', 'wake up 지니']
 	while 1:

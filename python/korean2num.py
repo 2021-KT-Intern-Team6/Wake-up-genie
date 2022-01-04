@@ -1,11 +1,10 @@
 import math
 
-"""
-Developed by Junseong Kim, Atlas Guide
-codertimo@goodatlas.com / github.com/codertimo
-Korean to number
-"""
-
+# file_name: korean2num.py
+# file_function:
+# 1. 한글숫자 -> 숫자
+# 2. 한글단위 -> 단위
+ 
 numbers = [
     ("스물", 20),
     ("서른", 30),
@@ -103,6 +102,7 @@ float_nums = [
 ]
 
 
+#=============================한글 -> 숫자, 단위 변환================================#
 def decode(korean_num):
     decode_result = []
     result = 0

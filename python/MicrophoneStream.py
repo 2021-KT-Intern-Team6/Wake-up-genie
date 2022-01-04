@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""MicroPhone & Play Sound"""
+# file_name: MicrophoneStream.py
+# file_function:
+# 1. text -> 음성파일
+# 2. 음성파일 출력
 
 from __future__ import print_function
 
@@ -14,6 +17,8 @@ CHANNELS = 1
 RATE = 16000
 CHUNK = 512
 
+
+#============================text -> 음성 파일================================#
 # MicrophoneStream - original code in https://goo.gl/7Xy3TT
 class MicrophoneStream(object):
 	"""Opens a recording stream as a generator yielding the audio chunks."""
@@ -78,6 +83,7 @@ class MicrophoneStream(object):
 			yield b''.join(data)
 # [END audio_stream]
 
+#=============================음성파일 출력================================#
 def play_file(fname):
 	# create an audio object
 	wf = wave.open(fname, 'rb')
