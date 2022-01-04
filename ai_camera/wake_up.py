@@ -8,9 +8,16 @@ import call_genie as cg
 import ai_eye_blink as eb
 
 
-t = Thread(target=cg.main)
-th = Thread(target=eb.main)
-t.deamon = True
-th.deamon = True
-t.start()
-th.start()
+def main():
+
+	t = Thread(target=cg.main)
+	th = Thread(target=eb.main)
+	t.deamon = True
+	th.deamon = True
+	t.start()
+	th.start()
+
+
+
+if __name__ == '__main__':
+	main()

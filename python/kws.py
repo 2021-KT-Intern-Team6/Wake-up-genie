@@ -23,8 +23,12 @@ btn_status = False
 def callback(channel):  
 	print("falling edge detected from pin {}".format(channel))
 	global btn_status
-	btn_status = True
-	print(btn_status)
+	if btn_status == True:
+		btn_status = False
+	else:
+		btn_status = True
+	#print(btn_status)
+	return btn_status 
 
 GPIO.add_event_detect(29, GPIO.FALLING, callback=callback, bouncetime=10)
 
@@ -39,15 +43,16 @@ asound.snd_lib_error_set_handler(c_error_handler)
 def detect():
 	with MS.MicrophoneStream(RATE, CHUNK) as stream:
 		audio_generator = stream.generator()
-
 		for content in audio_generator:
-
+			if btn_status == False:
+				return 500
 			rc = ktkws.detect(content)
 			rms = audioop.rms(content,2)
 			#print('audio rms = %d' % (rms))
-
 			if (rc == 1):
+				print(8)
 				MS.play_file("../data/sample_sound.wav")
+				print(9)
 				return 200
 
 def btn_detect():
@@ -97,7 +102,8 @@ def btn_test(key_word = '기가지니'):
 	return rc
 
 def main():
-	test()
+	#test()
+	return(btn_status)
 
 if __name__ == '__main__':
 	main()

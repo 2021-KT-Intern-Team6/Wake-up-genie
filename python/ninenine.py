@@ -111,7 +111,7 @@ def queryByVoice():
 	if response.resultCd == 200:
 		Text = response.uword
 		
-	if Text.find('졸려') or Text.find('도와줘'):
+	if Text.find('졸려') == 0 or Text.find('도와줘') == 0:
 		ninenine()
 		
 
