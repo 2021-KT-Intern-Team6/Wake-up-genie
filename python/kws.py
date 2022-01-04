@@ -61,11 +61,11 @@ def btn_detect():
 		audio_generator = stream.generator()
 
 		for content in audio_generator:
-			GPIO.output(31, GPIO.HIGH)
+			#GPIO.output(31, btn_status)
 			rc = ktkws.detect(content)
 			rms = audioop.rms(content,2)
 			#print('audio rms = %d' % (rms))
-			GPIO.output(31, GPIO.LOW)
+			#GPIO.output(31, GPIO.LOW)
 			if (btn_status == True):
 				rc = 1
 				btn_status = False			
@@ -103,6 +103,7 @@ def btn_test(key_word = '기가지니'):
 
 def main():
 	#test()
+	GPIO.output(31, btn_status)
 	return(btn_status)
 
 if __name__ == '__main__':
