@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# file_name: main.py
+# file_name: ai_eye_blink.py
 # file_function:
 # 1. 카메라로 실시간으로 데이터를 받음
 # 2. 얼굴에서 눈을 감지
 # 3. 눈을 떴는지 감았는지 check
 # 4. 졸음인지 아닌지 check
 # 5. 알람을 울림
-
+# 6. 옵습도에 따른 알림
 #========= Import library ===========#
 import kws
 import cv2, dlib
@@ -101,7 +101,7 @@ def main():
   prev_time = time.time()
   while cap.isOpened(): #카메라가 실행되었다면
         
-    if kws.main() == True:    
+    if kws.main() == True:#스위치를 이용한 온오프
       ret, img_ori = cap.read() #비디오의 한 프레임 씩 읽어오기 제대로 프레임을 읽으면 ret값이 True, 실패하면 False, fram = 읽은 프레임
       SENSOR_FRAME += 1
       if not ret: #제대로 프레임을 읽어오지 못했다면 while문 탈출해서 카메라 실행 중지
@@ -115,8 +115,8 @@ def main():
 
       faces = detector(gray) #gray scail 이미지에서 얼굴을 인식
       
-      prev_time, fps = check_frm(prev_time)
-      print('frame count: ' + str(fps))
+      #prev_time, fps = check_frm(prev_time)
+      #print('frame count: ' + str(fps))
       
       # 얼굴 감지에 대한 루프
       for face in faces:
@@ -193,30 +193,33 @@ def main():
                 RINGING_FLAG = True
 
               #===============================================================================================#
-
+              if t.is_alive():
+                RINGING_FLAG = False
+                
         else: #눈을떴을때 눈을 감았을때 축적된 데이터를 초기화
           COUNTER = 0
           TIMER_FLAG = False
           RUNNING_TIME = 0
           ALARM_FLAG = False
-
+          #==================================온습도에 따른 알림========================================#
           if SENSOR_FRAME >= 60 and RINGING_FLAG == False:
             th = Thread(target=ps.main)
             th.deamon = True
             th.start()
             SENSOR_FRAME = 0
-          
+          #============================================================================================#
           
         #=============================실시간으로 txt로 보여주는 부분================================#
-        RINGING_FLAG = False
+        
         # 왼쪽눈 오른쪽 눈에 상자 띄워서 실시간으로 눈 종횡비 보여주는 부분
         cv2.rectangle(img, pt1=tuple(eye_rect_l[0:2]), pt2=tuple(eye_rect_l[2:4]), color=(255,255,255), thickness=1)
         cv2.rectangle(img, pt1=tuple(eye_rect_r[0:2]), pt2=tuple(eye_rect_r[2:4]), color=(255,255,255), thickness=1)
         cv2.putText(img, state_l, tuple(eye_rect_l[0:2]), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 2)
         cv2.putText(img, state_r, tuple(eye_rect_r[0:2]), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 2)
       img = cv2.resize(img, dsize=(0, 0), fx=2.0, fy=2.0)
-      cv2.imshow('result', img)
-
+      winname = 'result'
+      cv2.imshow(winname, img)
+      cv2.moveWindow(winname, x=200, y =200)
       #========================================================================================#
 
       # 카메라 종료

@@ -1,3 +1,7 @@
+# file_name: wake_up.py
+# file_function:
+# 1. 눈깜빡임 쓰레드 실행
+# 2. 구구단 쓰레드 실행
 import sys
 from threading import Thread
 

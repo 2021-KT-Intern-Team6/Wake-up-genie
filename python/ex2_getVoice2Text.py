@@ -14,9 +14,6 @@ import audioop
 import os
 from ctypes import *
 
-import tts
-
-
 HOST = 'gate.gigagenie.ai'
 PORT = 4080
 RATE = 16000
@@ -49,16 +46,16 @@ def getVoice2Text():
     resultText = ''
     for response in stub.getVoice2Text(request):
         if response.resultCd == 200: # partial
-            print('resultCd=%d | recognizedText= %s 200' 
+            print('resultCd=%d | recognizedText= %s' 
                   % (response.resultCd, response.recognizedText))
             resultText = response.recognizedText
         elif response.resultCd == 201: # final
-            print('resultCd=%d | recognizedText= %s 201' 
+            print('resultCd=%d | recognizedText= %s' 
                   % (response.resultCd, response.recognizedText))
             resultText = response.recognizedText
             break
         else:
-            print('resultCd=%d | recognizedText= %s 203' 
+            print('resultCd=%d | recognizedText= %s' 
                   % (response.resultCd, response.recognizedText))
             break
 
@@ -67,12 +64,7 @@ def getVoice2Text():
 
 def main():
     # STT
-    while 1:
-        text = getVoice2Text()
-    
-        tts.getText2VoiceStream(text, "result_mesg.wav")
-        MS.play_file("result_mesg.wav")
-
+    text = getVoice2Text()
 
 if __name__ == '__main__':
     main()

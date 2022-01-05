@@ -24,4 +24,5 @@ def select_alarm(result) :
 def sound_alarm(path) :
     pygame.mixer.init()
     pygame.mixer.music.load(path) #path경로에 있는 알람을 울려줌
+    pygame.mixer.music.set_volume(0.7)
     pygame.mixer.music.play()

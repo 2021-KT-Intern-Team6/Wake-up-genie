@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# file_name: kws.py
+# file_function:
+# 1. 기가지니 호출 기능
 
-"""Example 1: GiGA Genie Keyword Spotting"""
-
+#========= Import library ===========#
 from __future__ import print_function
 
 import audioop
@@ -10,6 +12,7 @@ from ctypes import *
 import RPi.GPIO as GPIO
 import ktkws # KWS
 import MicrophoneStream as MS
+#====================================#
 KWSID = ['기가지니', '지니야', '친구야', '자기야', 'wake up 지니']
 RATE = 16000
 CHUNK = 512
@@ -20,6 +23,8 @@ GPIO.setup(29, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.setup(31, GPIO.OUT)
 btn_status = False
 
+
+#버튼 on/off 함수
 def callback(channel):  
 	print("falling edge detected from pin {}".format(channel))
 	global btn_status
@@ -32,6 +37,7 @@ def callback(channel):
 
 GPIO.add_event_detect(29, GPIO.FALLING, callback=callback, bouncetime=10)
 
+#ALSA(Advanced Linux Sound Architectrue)의 설정으로 인해 발생하는 불필요한 에러메시지를 삭제하기 위해 Python Error Handler를 정의하는 부분
 ERROR_HANDLER_FUNC = CFUNCTYPE(None, c_char_p, c_int, c_char_p, c_int, c_char_p)
 def py_error_handler(filename, line, function, err, fmt):
   dummy_var = 0
@@ -54,7 +60,7 @@ def detect():
 				MS.play_file("../data/sample_sound.wav")
 				print(9)
 				return 200
-
+"""
 def btn_detect():
 	global btn_status
 	with MS.MicrophoneStream(RATE, CHUNK) as stream:
@@ -73,7 +79,8 @@ def btn_detect():
 				GPIO.output(31, GPIO.HIGH)
 				#MS.play_file("../data/sample_sound.wav")
 				return 200
-
+"""
+#기가지니 호출 대기
 def test(key_word = '졸려'):
 	rc = ktkws.init("../data/kwsmodel.pack")
 	print ('init rc = %d' % (rc))
@@ -87,6 +94,7 @@ def test(key_word = '졸려'):
 	ktkws.stop()
 	return rc
 
+"""
 def btn_test(key_word = '기가지니'):
 	global btn_status
 	rc = ktkws.init("../data/kwsmodel.pack")
@@ -100,7 +108,7 @@ def btn_test(key_word = '기가지니'):
 	print ('\n\n호출어가 정상적으로 인식되었습니다.\n\n')
 	ktkws.stop()
 	return rc
-
+"""
 def main():
 	#test()
 	GPIO.output(31, btn_status)
