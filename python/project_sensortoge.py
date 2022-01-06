@@ -21,7 +21,7 @@ from threading import Thread
 
 HOST = 'gate.gigagenie.ai'
 PORT = 4080
-port = '/dev/ttyUSB1'
+port = '/dev/ttyUSB0'
 brate = 9600
 cmd = 'temp'
 

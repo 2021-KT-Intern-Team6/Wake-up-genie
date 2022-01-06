@@ -1,10 +1,8 @@
+# file_name: korean2num.py
+# file_function:
+# 1. 한글 -> 숫자
 import math
 
-"""
-Developed by Junseong Kim, Atlas Guide
-codertimo@goodatlas.com / github.com/codertimo
-Korean to number
-"""
 
 numbers = [
     ("스물", 20),
